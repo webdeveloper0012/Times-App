@@ -1,0 +1,50 @@
+package com.mahmoud.mohammed.timesapp.presentation.common;
+
+import android.support.test.espresso.IdlingResource;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+import kotlin.jvm.Volatile;
+
+public class SimpleCountingIdlingResource implements IdlingResource {
+
+
+    private AtomicInteger counter = new AtomicInteger(0);
+
+    // written from main thread, read from any thread.
+    @Volatile
+    private IdlingResource.ResourceCallback resourceCallback = null;
+
+    @Override
+    public String getName() {
+        return "";
+    }
+
+    @Override
+    public boolean isIdleNow() {
+        return counter.get() == 0;
+    }
+
+
+    @Override
+    public void registerIdleTransitionCallback(ResourceCallback callback) {
+        this.resourceCallback = callback;
+    }
+
+
+
+    public void increment() {
+        counter.getAndIncrement();
+    }
+
+
+    public void decrement() {
+        int counterVal = counter.decrementAndGet();
+        if (counterVal == 0) {
+            // we've gone from non-zero to zero. That means we're idle now! Tell espresso.
+            if (resourceCallback != null)
+                resourceCallback.onTransitionToIdle();
+        } else if (counterVal < 0)
+            throw new IllegalArgumentException("Counter has been corrupted!");
+    }
+}
